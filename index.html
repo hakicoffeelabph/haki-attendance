@@ -1,89 +1,301 @@
-.then(data => {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    const now = new Date();
+<title>Haki Coffee Lab Attendance</title>
 
-    const time = now.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-    if (data.success) {
+<style>
 
-        document.getElementById("status").className = "success";
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-        if (data.action === "IN") {
+body{
 
-            document.getElementById("status").innerHTML = `
-                <div style="font-size:42px;">🏴‍☠️</div>
+    font-family:Arial, Helvetica, sans-serif;
 
-                <h2 style="margin:10px 0;">Welcome aboard!</h2>
+    background:#F8F4EF;
 
-                <h1 style="color:#5B3A29;margin:10px 0;">
-                    ${data.employee}
-                </h1>
+    text-align:center;
 
-                <p style="font-size:20px;">
-                    Your shift has officially begun.
-                </p>
+    color:#3E2723;
 
-                <h3 style="color:#2E7D32;">
-                    ⚓ Time IN: ${time}
-                </h3>
+}
 
-                <p style="font-size:18px;">
-                    Let's set sail! ☕
-                </p>
-            `;
+.header{
 
-        } else {
+    background:#4E342E;
 
-            document.getElementById("status").innerHTML = `
-                <div style="font-size:42px;">⚓</div>
+    color:white;
 
-                <h2 style="margin:10px 0;">Voyage Complete!</h2>
+    padding:25px;
 
-                <h1 style="color:#5B3A29;margin:10px 0;">
-                    ${data.employee}
-                </h1>
+    box-shadow:0 3px 8px rgba(0,0,0,.2);
 
-                <p style="font-size:20px;">
-                    Great work today!
-                </p>
+}
 
-                <h3 style="color:#1565C0;">
-                    ⚓ Time OUT: ${time}
-                </h3>
+.header h1{
 
-                <p style="font-size:18px;">
-                    See you on the next adventure!
-                </p>
+    font-size:38px;
+
+}
+
+.header p{
+
+    margin-top:8px;
+
+    opacity:.9;
+
+}
+
+.container{
+
+    width:420px;
+
+    margin:30px auto;
+
+}
+
+#reader{
+
+    width:100%;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+}
+
+#status{
+
+    margin-top:25px;
+
+    background:white;
+
+    padding:25px;
+
+    border-radius:15px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+    min-height:240px;
+
+}
+
+.success{
+
+    color:#2E7D32;
+
+}
+
+.error{
+
+    color:#C62828;
+
+}
+
+.waiting{
+
+    color:#6D4C41;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>☕ Haki Coffee Lab</h1>
+
+<p>One Piece Crew Attendance System</p>
+
+</div>
+
+<div class="container">
+
+<div id="reader"></div>
+
+<div id="status" class="waiting">
+
+<div style="font-size:55px;">🏴‍☠️</div>
+
+<h2>Welcome, Crew Member!</h2>
+
+<br>
+
+<p>📷 Scan your Crew QR Pass</p>
+
+</div>
+
+</div>
+
+<script>
+
+const API =
+"https://script.google.com/macros/s/AKfycbx88XmsDUphnfdKVNNVWZ1IUaMlGZ4OUb1xyC5Jd9-6jM9J5dfUU3eGpl6TSOw3IZ_t/exec";
+
+let scanning = true;
+
+function onScanSuccess(decodedText){
+
+    if(!scanning) return;
+
+    scanning = false;
+
+    document.getElementById("status").className="waiting";
+
+    document.getElementById("status").innerHTML="<h2>Processing...</h2>";
+
+    fetch(API + "?employeeId=" + encodeURIComponent(decodedText))
+
+    .then(r => r.json())
+
+    .then(data => {
+
+        const now = new Date();
+
+        const time = now.toLocaleTimeString([],{
+            hour:'2-digit',
+            minute:'2-digit'
+        });
+
+        if(data.success){
+
+            document.getElementById("status").className="success";
+
+            if(data.action=="IN"){
+
+                document.getElementById("status").innerHTML=`
+
+                <div style="font-size:60px;">🏴‍☠️</div>
+
+                <h2>Welcome aboard!</h2>
+
+                <br>
+
+                <h1>${data.employee}</h1>
+
+                <br>
+
+                <p>Your shift has officially begun.</p>
+
+                <br>
+
+                <h2>⚓ Time IN: ${time}</h2>
+
+                <br>
+
+                <h3>Let's set sail! ☕</h3>
+
+                `;
+
+            }else{
+
+                document.getElementById("status").innerHTML=`
+
+                <div style="font-size:60px;">⚓</div>
+
+                <h2>Voyage Complete!</h2>
+
+                <br>
+
+                <h1>${data.employee}</h1>
+
+                <br>
+
+                <p>Great work today!</p>
+
+                <br>
+
+                <h2>⚓ Time OUT: ${time}</h2>
+
+                <br>
+
+                <h3>See you on the next adventure!</h3>
+
+                `;
+
+            }
+
+        }else{
+
+            document.getElementById("status").className="error";
+
+            document.getElementById("status").innerHTML=`
+
+            <div style="font-size:55px;">❌</div>
+
+            <h2>${data.message}</h2>
+
+            <br>
+
+            <p>Please contact your Captain.</p>
+
             `;
 
         }
 
-    } else {
+        setTimeout(function(){
 
-        document.getElementById("status").className = "error";
+            document.getElementById("status").className="waiting";
 
-        document.getElementById("status").innerHTML = `
-            <div style="font-size:42px;">❌</div>
+            document.getElementById("status").innerHTML=`
 
-            <h2>${data.message}</h2>
+            <div style="font-size:55px;">🏴‍☠️</div>
 
-            <p>Please contact your Captain.</p>
+            <h2>Welcome, Crew Member!</h2>
+
+            <br>
+
+            <p>📷 Scan your Crew QR Pass</p>
+
+            `;
+
+            scanning=true;
+
+        },4000);
+
+    })
+
+    .catch(function(){
+
+        document.getElementById("status").className="error";
+
+        document.getElementById("status").innerHTML=`
+
+        <div style="font-size:55px;">⚠️</div>
+
+        <h2>Connection Error</h2>
+
+        <br>
+
+        <p>Unable to reach attendance server.</p>
+
         `;
 
-    }
+        scanning=true;
 
-    setTimeout(() => {
+    });
 
-        document.getElementById("status").className = "";
+}
 
-        document.getElementById("status").innerHTML =
-            "Waiting for the next crew member...";
+new Html5QrcodeScanner(
+"reader",
+{
+fps:10,
+qrbox:250
+}).render(onScanSuccess);
 
-        scanning = true;
+</script>
 
-    }, 4000);
-
-})
+</body>
+</html>
