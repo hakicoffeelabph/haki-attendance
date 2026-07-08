@@ -8,25 +8,44 @@
 
 <style>
 body{
-    font-family:Arial;
-    background:#f4f4f4;
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f7f5f2;
     text-align:center;
-    padding:30px;
 }
 
-h1{
-    color:#5B3A29;
+.header{
+    background:#4E342E;
+    color:white;
+    padding:20px;
+}
+
+.header h1{
+    margin:0;
+}
+
+.container{
+    margin:30px auto;
+    width:360px;
 }
 
 #reader{
-    width:350px;
-    margin:auto;
+    width:100%;
 }
 
 #status{
-    margin-top:25px;
+    margin-top:20px;
     font-size:22px;
     font-weight:bold;
+    min-height:80px;
+}
+
+.success{
+    color:#2E7D32;
+}
+
+.error{
+    color:#C62828;
 }
 </style>
 
@@ -34,9 +53,12 @@ h1{
 
 <body>
 
+<div class="header">
 <h1>☕ Haki Coffee Lab</h1>
+<p>Employee QR Attendance</p>
+</div>
 
-<h2>Employee Attendance</h2>
+<div class="container">
 
 <div id="reader"></div>
 
@@ -44,31 +66,24 @@ h1{
 Waiting for employee...
 </div>
 
+</div>
+
 <script>
 
 const API =
-"YOUR_APPS_SCRIPT_URL";
+"https://script.google.com/macros/s/AKfycbx88XmsDUphnfdKVNNVWZ1IUaMlGZ4OUb1xyC5Jd9-6jM9J5dfUU3eGpl6TSOw3IZ_t/exec";
 
-let scanning = true;
+let scanning=true;
 
 function onScanSuccess(decodedText){
 
     if(!scanning) return;
 
-    scanning = false;
+    scanning=false;
 
-    document.getElementById("status").innerHTML =
-    "Processing...";
+    document.getElementById("status").innerHTML="Processing...";
 
-    fetch(API,{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            employeeId:decodedText
-        })
-    })
+    fetch(API+"?employeeId="+encodeURIComponent(decodedText))
 
     .then(r=>r.json())
 
@@ -78,12 +93,16 @@ function onScanSuccess(decodedText){
 
             if(data.action=="IN"){
 
+                document.getElementById("status").className="success";
+
                 document.getElementById("status").innerHTML=
                 "✅ Welcome<br><br>"
                 +data.employee+
                 "<br><br>Time IN Recorded";
 
             }else{
+
+                document.getElementById("status").className="success";
 
                 document.getElementById("status").innerHTML=
                 "👋 Goodbye<br><br>"
@@ -94,12 +113,16 @@ function onScanSuccess(decodedText){
 
         }else{
 
+            document.getElementById("status").className="error";
+
             document.getElementById("status").innerHTML=
             "❌ "+data.message;
 
         }
 
         setTimeout(function(){
+
+            document.getElementById("status").className="";
 
             document.getElementById("status").innerHTML=
             "Waiting for employee...";
@@ -110,7 +133,9 @@ function onScanSuccess(decodedText){
 
     })
 
-    .catch(err=>{
+    .catch(function(){
+
+        document.getElementById("status").className="error";
 
         document.getElementById("status").innerHTML=
         "Connection Error";
