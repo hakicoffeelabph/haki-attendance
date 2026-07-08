@@ -1,35 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Haki Coffee Lab Attendance</title>
+<meta charset="UTF-8">
+<title>Haki Coffee Lab Attendance</title>
 
-    <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-    <style>
-        body{
-            font-family:Arial;
-            background:#f5f5f5;
-            text-align:center;
-            margin:40px;
-        }
+<style>
+body{
+    font-family:Arial;
+    background:#f4f4f4;
+    text-align:center;
+    padding:30px;
+}
 
-        h1{
-            color:#5B3A29;
-        }
+h1{
+    color:#5B3A29;
+}
 
-        #reader{
-            width:350px;
-            margin:auto;
-        }
+#reader{
+    width:350px;
+    margin:auto;
+}
 
-        #result{
-            margin-top:20px;
-            font-size:22px;
-            color:green;
-            font-weight:bold;
-        }
-    </style>
+#status{
+    margin-top:25px;
+    font-size:22px;
+    font-weight:bold;
+}
+</style>
 
 </head>
 
@@ -37,28 +36,97 @@
 
 <h1>☕ Haki Coffee Lab</h1>
 
-<h2>Scan Employee QR</h2>
+<h2>Employee Attendance</h2>
 
 <div id="reader"></div>
 
-<div id="result">Waiting for QR...</div>
+<div id="status">
+Waiting for employee...
+</div>
 
 <script>
 
+const API =
+"YOUR_APPS_SCRIPT_URL";
+
+let scanning = true;
+
 function onScanSuccess(decodedText){
 
-    document.getElementById("result").innerHTML =
-        "Employee ID: " + decodedText;
+    if(!scanning) return;
+
+    scanning = false;
+
+    document.getElementById("status").innerHTML =
+    "Processing...";
+
+    fetch(API,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            employeeId:decodedText
+        })
+    })
+
+    .then(r=>r.json())
+
+    .then(data=>{
+
+        if(data.success){
+
+            if(data.action=="IN"){
+
+                document.getElementById("status").innerHTML=
+                "✅ Welcome<br><br>"
+                +data.employee+
+                "<br><br>Time IN Recorded";
+
+            }else{
+
+                document.getElementById("status").innerHTML=
+                "👋 Goodbye<br><br>"
+                +data.employee+
+                "<br><br>Time OUT Recorded";
+
+            }
+
+        }else{
+
+            document.getElementById("status").innerHTML=
+            "❌ "+data.message;
+
+        }
+
+        setTimeout(function(){
+
+            document.getElementById("status").innerHTML=
+            "Waiting for employee...";
+
+            scanning=true;
+
+        },3000);
+
+    })
+
+    .catch(err=>{
+
+        document.getElementById("status").innerHTML=
+        "Connection Error";
+
+        scanning=true;
+
+    });
 
 }
 
 new Html5QrcodeScanner(
-    "reader",
-    {
-        fps:10,
-        qrbox:250
-    }
-).render(onScanSuccess);
+"reader",
+{
+fps:10,
+qrbox:250
+}).render(onScanSuccess);
 
 </script>
 
