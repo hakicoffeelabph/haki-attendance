@@ -193,6 +193,9 @@ fetch(API+"?employeeId="+encodeURIComponent(decodedText))
 
 .then(data=>{
 
+console.log(data);
+alert(JSON.stringify(data));
+
 const now=new Date();
 
 const time=now.toLocaleTimeString([],{
