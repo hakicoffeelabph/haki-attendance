@@ -179,42 +179,36 @@ const API="https://script.google.com/macros/s/AKfycbx88XmsDUphnfdKVNNVWZ1IUaMlGZ
 let scanning = true;
 let processing = false;
 
-// Last successful scan
 let lastScan = "";
 let lastScanTime = 0;
 
-// Ignore the same QR for 4 seconds
 const SCAN_COOLDOWN = 4000;
 
 let lastDetectedQR = "";
 
 function onScanSuccess(decodedText){
 
+    const now = Date.now();
+
+    // Ignore if still processing
+    if(!scanning || processing){
+        return;
+    }
+
+    // Ignore if camera keeps seeing same QR
     if(decodedText === lastDetectedQR){
         return;
     }
 
-    lastDetectedQR = decodedText;
-
-    const now = Date.now();
-
-    if (!scanning || processing) {
-        return;
-    }
-
-    if (
+    // Ignore same QR within cooldown
+    if(
         decodedText === lastScan &&
-        (now - lastScanTime) < SCAN_COOLDOWN
-    ) {
+        (now-lastScanTime) < SCAN_COOLDOWN
+    ){
         return;
     }
 
-    lastScan = decodedText;
-    lastScanTime = now;
-
-    scanning = false;
-    processing = true;
-
+    lastDetectedQR = decodedText;
     lastScan = decodedText;
     lastScanTime = now;
 
@@ -224,24 +218,22 @@ function onScanSuccess(decodedText){
     document.getElementById("status").className="waiting";
     document.getElementById("status").innerHTML="<h2>Processing...</h2>";
 
-document.getElementById("status").className="waiting";
-document.getElementById("status").innerHTML="<h2>Processing...</h2>";
+    fetch(API+"?employeeId="+encodeURIComponent(decodedText))
 
-fetch(API+"?employeeId="+encodeURIComponent(decodedText))
+    .then(r=>r.json())
 
-.then(r=>r.json())
+    .then(data=>{
 
-.then(data=>{
+        const time=data.serverTime || "--:--";
 
-const time = data.serverTime || "--:--";
+        if(data.success){
 
-if(data.success){
+            document.getElementById("status").className="success";
 
-document.getElementById("status").className="success";
+            // ************* TIME IN *************
+            if(data.action==="TIME IN"){
 
-if(data.action==="IN"){
-
-document.getElementById("status").innerHTML=`
+                document.getElementById("status").innerHTML=`
 
 <div style="font-size:30px;">🏴‍☠️</div>
 
@@ -271,9 +263,12 @@ Your shift has officially begun.
 
 `;
 
-}else{
+            }
 
-document.getElementById("status").innerHTML=`
+            // ************* TIME OUT *************
+            else if(data.action==="TIME OUT"){
+
+                document.getElementById("status").innerHTML=`
 
 <div style="font-size:30px;">⚓</div>
 
@@ -311,13 +306,27 @@ See you on the next adventure!
 
 `;
 
-}
+            }
 
-}else{
+            else{
 
-document.getElementById("status").className="error";
+                document.getElementById("status").className="error";
 
-document.getElementById("status").innerHTML=`
+                document.getElementById("status").innerHTML=`
+
+<div style="font-size:60px;">ℹ️</div>
+
+<h2>${data.message}</h2>
+
+`;
+
+            }
+
+        }else{
+
+            document.getElementById("status").className="error";
+
+            document.getElementById("status").innerHTML=`
 
 <div style="font-size:60px;">❌</div>
 
@@ -327,13 +336,13 @@ document.getElementById("status").innerHTML=`
 
 `;
 
-}
+        }
 
-setTimeout(function(){
+        setTimeout(function(){
 
-document.getElementById("status").className="waiting";
+            document.getElementById("status").className="waiting";
 
-document.getElementById("status").innerHTML=`
+            document.getElementById("status").innerHTML=`
 
 <div style="font-size:65px;">🏴‍☠️</div>
 
@@ -345,23 +354,21 @@ document.getElementById("status").innerHTML=`
 
 `;
 
-scanning = true;
-processing = false;
+            scanning=true;
+            processing=false;
+            lastScan="";
+            lastScanTime=0;
+            lastDetectedQR="";
 
-lastScan = "";
-lastScanTime = 0;
+        },4000);
 
-lastDetectedQR = "";
+    })
 
-},4000);
+    .catch(function(){
 
-})
+        document.getElementById("status").className="error";
 
-.catch(function(){
-
-document.getElementById("status").className="error";
-
-document.getElementById("status").innerHTML=`
+        document.getElementById("status").innerHTML=`
 
 <div style="font-size:60px;">⚠️</div>
 
@@ -371,23 +378,21 @@ document.getElementById("status").innerHTML=`
 
 `;
 
-scanning = true;
-processing = false;
+        scanning=true;
+        processing=false;
+        lastScan="";
+        lastScanTime=0;
+        lastDetectedQR="";
 
-lastScan = "";
-lastScanTime = 0;
-
-lastDetectedQR = "";
-
-});
+    });
 
 }
 
 new Html5QrcodeScanner("reader",{
 
-fps:10,
+    fps:10,
 
-qrbox:250
+    qrbox:250
 
 }).render(onScanSuccess);
 
