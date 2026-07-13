@@ -176,13 +176,53 @@ Powered by Haki Coffee Lab System
 
 const API="https://script.google.com/macros/s/AKfycbx88XmsDUphnfdKVNNVWZ1IUaMlGZ4OUb1xyC5Jd9-6jM9J5dfUU3eGpl6TSOw3IZ_t/exec";
 
-let scanning=true;
+let scanning = true;
+let processing = false;
+
+// Last successful scan
+let lastScan = "";
+let lastScanTime = 0;
+
+// Ignore the same QR for 4 seconds
+const SCAN_COOLDOWN = 4000;
+
+let lastDetectedQR = "";
 
 function onScanSuccess(decodedText){
 
-if(!scanning) return;
+    if(decodedText === lastDetectedQR){
+        return;
+    }
 
-scanning=false;
+    lastDetectedQR = decodedText;
+
+    const now = Date.now();
+
+    if (!scanning || processing) {
+        return;
+    }
+
+    if (
+        decodedText === lastScan &&
+        (now - lastScanTime) < SCAN_COOLDOWN
+    ) {
+        return;
+    }
+
+    lastScan = decodedText;
+    lastScanTime = now;
+
+    scanning = false;
+    processing = true;
+
+    lastScan = decodedText;
+    lastScanTime = now;
+
+    scanning = false;
+    processing = true;
+
+    document.getElementById("status").className="waiting";
+    document.getElementById("status").innerHTML="<h2>Processing...</h2>";
 
 document.getElementById("status").className="waiting";
 document.getElementById("status").innerHTML="<h2>Processing...</h2>";
@@ -193,18 +233,13 @@ fetch(API+"?employeeId="+encodeURIComponent(decodedText))
 
 .then(data=>{
 
-const now=new Date();
-
-const time=now.toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
-});
+const time = data.serverTime || "--:--";
 
 if(data.success){
 
 document.getElementById("status").className="success";
 
-if(data.action==="TIME IN"){
+if(data.action==="IN"){
 
 document.getElementById("status").innerHTML=`
 
@@ -310,7 +345,13 @@ document.getElementById("status").innerHTML=`
 
 `;
 
-scanning=true;
+scanning = true;
+processing = false;
+
+lastScan = "";
+lastScanTime = 0;
+
+lastDetectedQR = "";
 
 },4000);
 
@@ -330,7 +371,13 @@ document.getElementById("status").innerHTML=`
 
 `;
 
-scanning=true;
+scanning = true;
+processing = false;
+
+lastScan = "";
+lastScanTime = 0;
+
+lastDetectedQR = "";
 
 });
 
